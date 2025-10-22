@@ -162,16 +162,23 @@ function initializeEventListeners() {
         });
     });
 
-    // Close modals
+    // Close modals with history support
     document.querySelectorAll('.close').forEach(closeBtn => {
         closeBtn.addEventListener('click', () => {
-            closeBtn.closest('.modal').style.display = 'none';
+            const modal = closeBtn.closest('.modal');
+            if (modal && modal.id) {
+                closeModal(modal.id);
+            }
         });
     });
 
+    // Close modal when clicking outside
     window.addEventListener('click', (e) => {
         if (e.target.classList.contains('modal')) {
-            e.target.style.display = 'none';
+            const modalId = e.target.id;
+            if (modalId) {
+                closeModal(modalId);
+            }
         }
     });
 }
@@ -271,7 +278,7 @@ function searchProducts(term) {
 }
 
 // Show Product Detail
-function showProductDetail(product) {
+function showProductDetail(product, addToHistory = true) {
     currentProduct = product;
     const detail = document.getElementById('productDetail');
     detail.innerHTML = `
@@ -306,7 +313,12 @@ function showProductDetail(product) {
             </div>
         </div>
     `;
-    openModal('productModal');
+    openModal('productModal', addToHistory);
+}
+
+// Alias for viewProduct (used in history navigation)
+function viewProduct(product, addToHistory = true) {
+    showProductDetail(product, addToHistory);
 }
 
 // Select Size
@@ -679,14 +691,109 @@ function handleLogin() {
     showNotification('Login successful!');
 }
 
-// Modal Functions
-function openModal(modalId) {
-    document.getElementById(modalId).style.display = 'block';
+// Navigation History Management
+let navigationStack = [];
+
+// Modal Functions with History Support
+function openModal(modalId, addToHistory = true) {
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+
+    modal.style.display = 'block';
+
+    // Add to browser history
+    if (addToHistory) {
+        const state = {
+            modal: modalId,
+            timestamp: Date.now()
+        };
+
+        // Store current product if opening product detail
+        if (modalId === 'productModal' && currentProduct) {
+            state.productId = currentProduct.id;
+        }
+
+        history.pushState(state, '', `#${modalId}`);
+        navigationStack.push(modalId);
+    }
 }
 
-function closeModal(modalId) {
-    document.getElementById(modalId).style.display = 'none';
+function closeModal(modalId, updateHistory = true) {
+    const modal = document.getElementById(modalId);
+    if (!modal) return;
+
+    modal.style.display = 'none';
+
+    // Update browser history when manually closing
+    if (updateHistory && navigationStack.length > 0) {
+        const lastModal = navigationStack[navigationStack.length - 1];
+        if (lastModal === modalId) {
+            navigationStack.pop();
+            if (navigationStack.length === 0) {
+                // Going back to home
+                history.pushState({}, '', window.location.pathname);
+            } else {
+                history.back();
+            }
+        }
+    }
 }
+
+// Close all modals
+function closeAllModals(updateHistory = false) {
+    const modals = ['productModal', 'cartModal', 'checkoutModal', 'loginModal', 'ordersModal', 'successModal'];
+    modals.forEach(modalId => {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    });
+
+    if (updateHistory) {
+        navigationStack = [];
+        history.pushState({}, '', window.location.pathname);
+    }
+}
+
+// Handle browser back/forward button
+window.addEventListener('popstate', (event) => {
+    if (event.state && event.state.modal) {
+        // Going to a specific modal
+        closeAllModals(false);
+
+        // Re-open the modal from history
+        const modal = document.getElementById(event.state.modal);
+        if (modal) {
+            modal.style.display = 'block';
+
+            // If it's a product modal, load the product
+            if (event.state.modal === 'productModal' && event.state.productId) {
+                const product = products.find(p => p.id === event.state.productId);
+                if (product) {
+                    viewProduct(product, false);
+                }
+            }
+            // If it's cart modal, display cart
+            else if (event.state.modal === 'cartModal') {
+                displayCart();
+            }
+            // If it's orders modal, display orders
+            else if (event.state.modal === 'ordersModal') {
+                displayOrders();
+            }
+        }
+
+        // Update navigation stack
+        const modalIndex = navigationStack.indexOf(event.state.modal);
+        if (modalIndex !== -1) {
+            navigationStack = navigationStack.slice(0, modalIndex + 1);
+        }
+    } else {
+        // Going back to home page
+        closeAllModals(false);
+        navigationStack = [];
+    }
+});
 
 // Notification
 function showNotification(message) {
