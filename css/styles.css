@@ -91,6 +91,10 @@ body {
     padding: 0 20px;
     cursor: pointer;
     transition: background 0.3s;
+    flex-shrink: 0;
+    min-width: 70px;
+    font-size: 14px;
+    font-weight: 500;
 }
 
 .search-btn:hover {
@@ -1052,6 +1056,18 @@ body {
         max-width: 100%;
     }
 
+    .search-bar input {
+        font-size: 14px;
+        padding: 10px 12px;
+    }
+
+    .search-btn {
+        padding: 0 18px;
+        font-size: 14px;
+        min-width: 60px;
+        flex-shrink: 0;
+    }
+
     .header-actions {
         gap: 12px;
     }
@@ -1329,6 +1345,19 @@ body {
     .btn-header {
         padding: 6px 8px;
         font-size: 16px;
+    }
+
+    /* Search Bar */
+    .search-bar input {
+        font-size: 14px;
+        padding: 10px 12px;
+    }
+
+    .search-btn {
+        padding: 0 15px;
+        font-size: 14px;
+        min-width: 55px;
+        flex-shrink: 0;
     }
 
     /* Navigation */
@@ -1714,6 +1743,18 @@ body {
 @media (max-width: 360px) {
     .logo h1 {
         font-size: 18px;
+    }
+
+    /* Search Bar */
+    .search-bar input {
+        font-size: 13px;
+        padding: 8px 10px;
+    }
+
+    .search-btn {
+        padding: 0 12px;
+        font-size: 13px;
+        min-width: 50px;
     }
 
     .banner-content h2 {
